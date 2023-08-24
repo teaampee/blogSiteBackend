@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func (apiCfg *apiConfig) UserAuth(c *gin.Context) {
@@ -34,20 +35,32 @@ func (apiCfg *apiConfig) UserAuth(c *gin.Context) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		// check exp
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("token expired: %v", err),
+			})
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
+		//get user
+		//convert subject to uuid
+		userID, _ := uuid.Parse(claims["sub"].(string))
 
-		fmt.Println(claims["foo"], claims["nbf"])
+		user, err := apiCfg.DB.GetUserByID(c.Request.Context(), userID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("failed to get user: %v", err),
+			})
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
+		//attach to req
+		c.Set("user", user)
+
 	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": fmt.Sprintf("invalid token: %v", err),
+		})
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 
-	//check exp
-
-	//find the user with token sub
-
-	//attach to req
-
-	//continue
+	//continu
 	c.Next()
 }

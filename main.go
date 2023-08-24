@@ -40,6 +40,8 @@ func main() {
 	r := gin.Default()
 	r.POST("/user", apiCfg.handlerCreateUser)
 	r.POST("/login", apiCfg.handlerLogin)
+	r.GET("/validate", apiCfg.UserAuth, apiCfg.handlerValidate)
+
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")}
 
 }
