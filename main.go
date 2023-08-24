@@ -42,6 +42,8 @@ func main() {
 	r.POST("/login", apiCfg.handlerLogin)
 	r.GET("/validate", apiCfg.UserAuth, apiCfg.handlerValidate)
 
+	r.POST("/blog", apiCfg.UserAuth, apiCfg.handlerCreateBlog)
+
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")}
 
 }

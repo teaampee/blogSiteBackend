@@ -73,6 +73,26 @@ func (apiCfg *apiConfig) handlerCreateUser(c *gin.Context) {
 		return
 	}
 
+	//generate token
+	// Create a new token object, specifying signing method and the claims
+	// you would like it to contain.
+	token := jwt.NewWithClaims(jwt.SigningMethodHS384, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to create token: %v", err),
+		})
+		return
+	}
+	// returning a token
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+
 	//returning it
 	c.JSON(200, gin.H{
 		"user": user,
@@ -151,9 +171,16 @@ func (apiCfg *apiConfig) handlerLogin(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerValidate(c *gin.Context) {
-	user, _ := c.Get("user")
+	userIDAny, _ := c.Get("UserID")
+	userID, ok := userIDAny.(uuid.UUID)
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintln("failed to parse uuid"),
+		})
+		return
+	}
 
 	c.JSON(200, gin.H{
-		"message": user,
+		"message": userID,
 	})
 }
