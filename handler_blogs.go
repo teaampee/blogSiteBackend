@@ -84,6 +84,33 @@ func (apiCfg *apiConfig) handlerGetBlogs(c *gin.Context) {
 	})
 }
 
+func (apiCfg *apiConfig) handlerGetActiveBlogs(c *gin.Context) {
+
+	blogIDs, err := apiCfg.DB.GetLatestActiveBlogIDs(c.Request.Context())
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch blogs: %v", err),
+		})
+		return
+	}
+
+	var blogs []database.Blog
+	for _, blogID := range blogIDs {
+		blog, err := apiCfg.DB.GetBlog(c.Request.Context(), blogID)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": fmt.Sprintf("failed to fetch blogs: %v", err),
+			})
+			return
+		}
+		blogs = append(blogs, blog)
+	}
+	// return active blogs
+	c.JSON(200, gin.H{
+		"blogs": blogs,
+	})
+}
+
 func (apiCfg *apiConfig) handlerGetBlog(c *gin.Context) {
 	blogIDStr := c.Param("blogID")
 	blogID, err := uuid.Parse(blogIDStr)
