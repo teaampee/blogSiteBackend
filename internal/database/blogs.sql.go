@@ -48,6 +48,15 @@ func (q *Queries) CreateBlog(ctx context.Context, arg CreateBlogParams) (Blog, e
 	return i, err
 }
 
+const deleteUserBlog = `-- name: DeleteUserBlog :exec
+DELETE FROM blogs where user_id = $1
+`
+
+func (q *Queries) DeleteUserBlog(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteUserBlog, userID)
+	return err
+}
+
 const getBlog = `-- name: GetBlog :one
 SELECT id, created_at, updated_at, title, description, user_id FROM blogs WHERE id = $1
 `
@@ -68,6 +77,8 @@ func (q *Queries) GetBlog(ctx context.Context, id uuid.UUID) (Blog, error) {
 
 const getBlogs = `-- name: GetBlogs :many
 SELECT id, created_at, updated_at, title, description, user_id FROM blogs
+ORDER BY updated_at ASC
+LIMIT 50
 `
 
 func (q *Queries) GetBlogs(ctx context.Context) ([]Blog, error) {
@@ -106,6 +117,33 @@ SELECT id, created_at, updated_at, title, description, user_id FROM blogs WHERE 
 
 func (q *Queries) GetUserBlog(ctx context.Context, userID uuid.UUID) (Blog, error) {
 	row := q.db.QueryRowContext(ctx, getUserBlog, userID)
+	var i Blog
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Title,
+		&i.Description,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const updateUserBlog = `-- name: UpdateUserBlog :one
+UPDATE blogs
+SET title = $1, description = $2
+WHERE user_id = $3
+RETURNING id, created_at, updated_at, title, description, user_id
+`
+
+type UpdateUserBlogParams struct {
+	Title       string
+	Description string
+	UserID      uuid.UUID
+}
+
+func (q *Queries) UpdateUserBlog(ctx context.Context, arg UpdateUserBlogParams) (Blog, error) {
+	row := q.db.QueryRowContext(ctx, updateUserBlog, arg.Title, arg.Description, arg.UserID)
 	var i Blog
 	err := row.Scan(
 		&i.ID,

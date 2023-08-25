@@ -70,82 +70,147 @@ func (apiCfg *apiConfig) handlerCreateBlog(c *gin.Context) {
 	})
 }
 
-// func (apiCfg *apiConfig) handlerLogin(c *gin.Context) {
-// 	// getting data off request
-// 	var params struct {
-// 		Email    string
-// 		Password string
-// 	}
-// 	err := c.Bind(&params)
-// 	if err != nil {
-// 		c.JSON(400, gin.H{
-// 			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
-// 		})
-// 		return
-// 	}
+func (apiCfg *apiConfig) handlerGetBlogs(c *gin.Context) {
 
-// 	// Perform input validation
+	blogs, err := apiCfg.DB.GetBlogs(c.Request.Context())
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch blogs: %v", err),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"blogs": blogs,
+	})
+}
 
-// 	if params.Email == "" || params.Password == "" {
-// 		c.JSON(400, gin.H{
-// 			"message": fmt.Sprintf("missing required fields: %v", err),
-// 		})
-// 		return
-// 	}
-// 	_, err = mail.ParseAddress(params.Email)
-// 	if err != nil {
-// 		c.JSON(400, gin.H{
-// 			"message": fmt.Sprintf("false email formatting: %v", err),
-// 		})
-// 		return
-// 	}
+func (apiCfg *apiConfig) handlerGetBlog(c *gin.Context) {
+	blogIDStr := c.Param("blogID")
+	blogID, err := uuid.Parse(blogIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse blog: %v", err),
+		})
+	}
 
-// 	// get user
+	blog, err := apiCfg.DB.GetBlog(c.Request.Context(), blogID)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch blog: %v", err),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"blog": blog,
+	})
+}
 
-// 	user, err := apiCfg.DB.GetUserByEmail(c.Request.Context(), params.Email)
+func (apiCfg *apiConfig) handlerGetUserBlog(c *gin.Context) {
+	userIDStr := c.Param("userID")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse blog: %v", err),
+		})
+	}
 
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{
-// 			"message": fmt.Sprintf("failed to get user: %v", err),
-// 		})
-// 		return
-// 	}
-// 	// validate password
-// 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password))
-// 	if err != nil {
-// 		c.JSON(400, gin.H{
-// 			"message":   fmt.Sprintf("Invalid email or password: %v", err),
-// 			"hpassword": user.Password,
-// 		})
-// 		return
-// 	}
+	blog, err := apiCfg.DB.GetUserBlog(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch blog: %v", err),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"blog": blog,
+	})
+}
 
-// 	//generate token
-// 	// Create a new token object, specifying signing method and the claims
-// 	// you would like it to contain.
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS384, jwt.MapClaims{
-// 		"sub": user.ID,
-// 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-// 	})
+func (apiCfg *apiConfig) handlerUpdateUserBlog(c *gin.Context) {
+	// get user off req
+	userIDAny, ok := c.Get("UserID")
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprint("failed to get the user id off req"),
+		})
+		return
+	}
+	//convert into uuid
+	userID, ok := userIDAny.(uuid.UUID)
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprint("failed to parse uuid"),
+		})
+		return
+	}
+	// getting data off request
+	var params struct {
+		Title       string
+		Description string
+	}
+	err := c.Bind(&params)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
+		})
+		return
+	}
 
-// 	// Sign and get the complete encoded token as a string using the secret
-// 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
-// 	if err != nil {
-// 		c.JSON(400, gin.H{
-// 			"message": fmt.Sprintf("failed to create token: %v", err),
-// 		})
-// 		return
-// 	}
-// 	// returning it
-// 	c.SetSameSite(http.SameSiteLaxMode)
-// 	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-// 	c.JSON(200, gin.H{})
-// }
+	// Perform input validation
 
-// func (apiCfg *apiConfig) handlerValidate(c *gin.Context) {
-// 	user, _ := c.Get("user")
+	if params.Title == "" || params.Description == "" {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("missing required fields: %v", err),
+		})
+		return
+	}
 
-// 	c.JSON(200, gin.H{
-// 		"message": user,
-// 	})
-// }
+	blog, err := apiCfg.DB.UpdateUserBlog(c.Request.Context(), database.UpdateUserBlogParams{
+		Title:       params.Title,
+		Description: params.Description,
+		UserID:      userID,
+	})
+
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to update blog: %v", err),
+		})
+		return
+	}
+
+	//returning it
+	c.JSON(200, gin.H{
+		"blog": blog,
+	})
+}
+
+func (apiCfg *apiConfig) handlerDeleteUserBlog(c *gin.Context) {
+	// get user off req
+	userIDAny, ok := c.Get("UserID")
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprint("failed to get the user id off req"),
+		})
+		return
+	}
+	//convert into uuid
+	userID, ok := userIDAny.(uuid.UUID)
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprint("failed to parse uuid"),
+		})
+		return
+	}
+
+	err := apiCfg.DB.DeleteUserBlog(c.Request.Context(), userID)
+
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to create blog: %v", err),
+		})
+		return
+	}
+
+	//returning it
+	c.JSON(200, gin.H{})
+}
