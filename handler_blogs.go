@@ -72,7 +72,7 @@ func (apiCfg *apiConfig) handlerCreateBlog(c *gin.Context) {
 
 func (apiCfg *apiConfig) handlerGetBlogs(c *gin.Context) {
 
-	blogs, err := apiCfg.DB.GetBlogs(c.Request.Context())
+	blogs, err := apiCfg.DB.GetLatestBlogs(c.Request.Context())
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to fetch blogs: %v", err),

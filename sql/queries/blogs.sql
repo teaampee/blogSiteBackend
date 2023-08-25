@@ -3,9 +3,15 @@ INSERT INTO blogs (id, created_at, updated_at , title, description, user_id)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
--- name: GetBlogs :many
+-- name: GetLatestBlogs :many
 SELECT * FROM blogs
-ORDER BY updated_at ASC
+ORDER BY created_at DESC
+LIMIT 50;
+
+-- name: GetLatestActiveBlogIDs :many
+SELECT DISTINCT blog_id
+FROM posts
+ORDER BY created_at DESC
 LIMIT 50;
 
 -- name: GetUserBlog :one
