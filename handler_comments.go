@@ -10,6 +10,13 @@ import (
 )
 
 func (apiCfg *apiConfig) handlerCreateComment(c *gin.Context) {
+	postIDStr := c.Query("post_id")
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse post: %v", err),
+		})
+	}
 	// get user off req
 	userIDAny, ok := c.Get("userID")
 	if !ok {
@@ -29,9 +36,8 @@ func (apiCfg *apiConfig) handlerCreateComment(c *gin.Context) {
 	// getting data off request
 	var params struct {
 		Content string
-		postID  uuid.UUID
 	}
-	err := c.Bind(&params)
+	err = c.Bind(&params)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
@@ -54,7 +60,7 @@ func (apiCfg *apiConfig) handlerCreateComment(c *gin.Context) {
 		UpdatedAt: time.Now().UTC(),
 		Content:   params.Content,
 		UserID:    userID,
-		PostID:    params.postID,
+		PostID:    postID,
 	})
 
 	if err != nil {
@@ -115,6 +121,13 @@ func (apiCfg *apiConfig) handlerGetComment(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerUpdateComment(c *gin.Context) {
+	commentIDStr := c.Param("commentID")
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse comment: %v", err),
+		})
+	}
 	// get user off req
 	userIDAny, ok := c.Get("userID")
 	if !ok {
@@ -133,10 +146,9 @@ func (apiCfg *apiConfig) handlerUpdateComment(c *gin.Context) {
 	}
 	// getting data off request
 	var params struct {
-		Content   string
-		CommentID uuid.UUID
+		Content string
 	}
-	err := c.Bind(&params)
+	err = c.Bind(&params)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
@@ -156,7 +168,7 @@ func (apiCfg *apiConfig) handlerUpdateComment(c *gin.Context) {
 	comment, err := apiCfg.DB.UpdateUserComment(c.Request.Context(), database.UpdateUserCommentParams{
 		Content: params.Content,
 		UserID:  userID,
-		ID:      params.CommentID,
+		ID:      commentID,
 	})
 
 	if err != nil {

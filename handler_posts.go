@@ -124,6 +124,13 @@ func (apiCfg *apiConfig) handlerGetPost(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerUpdateUserPost(c *gin.Context) {
+	postIDStr := c.Param("postID")
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse post: %v", err),
+		})
+	}
 	// get user off req
 	userIDAny, ok := c.Get("userID")
 	if !ok {
@@ -142,11 +149,10 @@ func (apiCfg *apiConfig) handlerUpdateUserPost(c *gin.Context) {
 	}
 	// getting data off request
 	var params struct {
-		ID      uuid.UUID
 		Title   string
 		Content string
 	}
-	err := c.Bind(&params)
+	err = c.Bind(&params)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
@@ -166,7 +172,7 @@ func (apiCfg *apiConfig) handlerUpdateUserPost(c *gin.Context) {
 	post, err := apiCfg.DB.UpdateUserPost(c.Request.Context(), database.UpdateUserPostParams{
 		Title:   params.Title,
 		Content: params.Content,
-		ID:      params.ID,
+		ID:      postID,
 		UserID:  userID,
 	})
 

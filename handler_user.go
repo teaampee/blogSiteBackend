@@ -98,6 +98,7 @@ func (apiCfg *apiConfig) handlerCreateUser(c *gin.Context) {
 		"user": user,
 	})
 }
+
 func (apiCfg *apiConfig) handlerLogin(c *gin.Context) {
 	// getting data off request
 	var params struct {
@@ -168,6 +169,27 @@ func (apiCfg *apiConfig) handlerLogin(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
 	c.JSON(200, gin.H{})
+}
+
+func (apiCfg *apiConfig) handlerGetUser(c *gin.Context) {
+	userIDStr := c.Param("userID")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse blog: %v", err),
+		})
+	}
+
+	user, err := apiCfg.DB.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch user: %v", err),
+		})
+	}
+
+	c.JSON(200, gin.H{
+		"message": user,
+	})
 }
 
 func (apiCfg *apiConfig) handlerValidate(c *gin.Context) {
