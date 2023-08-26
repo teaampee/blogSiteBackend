@@ -52,7 +52,7 @@ func (apiCfg *apiConfig) UserAuth(c *gin.Context) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		//attach to req
-		c.Set("UserID", user.ID)
+		c.Set("userID", user.ID)
 
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{

@@ -19,6 +19,15 @@ type Blog struct {
 	UserID      uuid.UUID
 }
 
+type Comment struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Content   string
+	UserID    uuid.UUID
+	PostID    uuid.UUID
+}
+
 type Post struct {
 	ID        uuid.UUID
 	CreatedAt time.Time

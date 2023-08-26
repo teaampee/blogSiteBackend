@@ -9,15 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (apiCfg *apiConfig) handlerCreatePost(c *gin.Context) {
-	// get blog id off url
-	blogIDStr := c.Param("blogID")
-	blogID, err := uuid.Parse(blogIDStr)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to parse blog: %v", err),
-		})
-	}
+func (apiCfg *apiConfig) handlerCreateComment(c *gin.Context) {
 	// get user off req
 	userIDAny, ok := c.Get("userID")
 	if !ok {
@@ -36,115 +28,8 @@ func (apiCfg *apiConfig) handlerCreatePost(c *gin.Context) {
 	}
 	// getting data off request
 	var params struct {
-		Title   string
 		Content string
-	}
-	err = c.Bind(&params)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
-		})
-		return
-	}
-
-	// Perform input validation
-
-	if params.Title == "" || params.Content == "" {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("missing required fields: %v", err),
-		})
-		return
-	}
-
-	post, err := apiCfg.DB.CreateBlogPost(c.Request.Context(), database.CreateBlogPostParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		Title:     params.Title,
-		Content:   params.Content,
-		UserID:    userID,
-		BlogID:    blogID,
-	})
-
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to create post: %v", err),
-		})
-		return
-	}
-
-	//returning it
-	c.JSON(200, gin.H{
-		"post": post,
-	})
-}
-
-func (apiCfg *apiConfig) handlerGetBlogPosts(c *gin.Context) {
-	blogIDStr := c.Param("blogID")
-	blogID, err := uuid.Parse(blogIDStr)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to parse blog's post: %v", err),
-		})
-	}
-
-	posts, err := apiCfg.DB.GetBlogPosts(c.Request.Context(), blogID)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to fetch posts: %v", err),
-		})
-		return
-	}
-	c.JSON(200, gin.H{
-		"posts": posts,
-	})
-}
-
-func (apiCfg *apiConfig) handlerGetPost(c *gin.Context) {
-	postIDStr := c.Param("postID")
-	postID, err := uuid.Parse(postIDStr)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to parse post: %v", err),
-		})
-	}
-
-	post, err := apiCfg.DB.GetPost(c.Request.Context(), postID)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to fetch post: %v", err),
-		})
-		return
-	}
-
-	// return active blogs
-	c.JSON(200, gin.H{
-		"post": post,
-	})
-}
-
-func (apiCfg *apiConfig) handlerUpdateUserPost(c *gin.Context) {
-	// get user off req
-	userIDAny, ok := c.Get("userID")
-	if !ok {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprint("failed to get the user id off req"),
-		})
-		return
-	}
-	//convert into uuid
-	userID, ok := userIDAny.(uuid.UUID)
-	if !ok {
-		c.JSON(400, gin.H{
-			"message": fmt.Sprint("failed to parse uuid"),
-		})
-		return
-	}
-	// getting data off request
-	var params struct {
-		ID      uuid.UUID
-		Title   string
-		Content string
+		postID  uuid.UUID
 	}
 	err := c.Bind(&params)
 	if err != nil {
@@ -156,36 +41,140 @@ func (apiCfg *apiConfig) handlerUpdateUserPost(c *gin.Context) {
 
 	// Perform input validation
 
-	if params.Title == "" || params.Content == "" {
+	if params.Content == "" {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("missing required fields: %v", err),
 		})
 		return
 	}
 
-	post, err := apiCfg.DB.UpdateUserPost(c.Request.Context(), database.UpdateUserPostParams{
-		Title:   params.Title,
-		Content: params.Content,
-		ID:      params.ID,
-		UserID:  userID,
+	comment, err := apiCfg.DB.CreateComment(c.Request.Context(), database.CreateCommentParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		Content:   params.Content,
+		UserID:    userID,
+		PostID:    params.postID,
 	})
 
 	if err != nil {
 		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to update post: %v", err),
+			"message": fmt.Sprintf("failed to create comment: %v", err),
 		})
 		return
 	}
 
 	//returning it
 	c.JSON(200, gin.H{
-		"post": post,
+		"comment": comment,
 	})
 }
 
-func (apiCfg *apiConfig) handlerDeleteUserPost(c *gin.Context) {
+func (apiCfg *apiConfig) handlerGetPostComments(c *gin.Context) {
 	postIDStr := c.Param("postID")
 	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse post's url: %v", err),
+		})
+	}
+
+	comments, err := apiCfg.DB.GetPostComments(c.Request.Context(), postID)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch post's comments: %v", err),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"comments": comments,
+	})
+}
+
+func (apiCfg *apiConfig) handlerGetComment(c *gin.Context) {
+	commentIDStr := c.Param("commentID")
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse comment: %v", err),
+		})
+	}
+
+	comment, err := apiCfg.DB.GetComment(c.Request.Context(), commentID)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to fetch comment: %v", err),
+		})
+		return
+	}
+
+	// return comment
+	c.JSON(200, gin.H{
+		"comment": comment,
+	})
+}
+
+func (apiCfg *apiConfig) handlerUpdateComment(c *gin.Context) {
+	// get user off req
+	userIDAny, ok := c.Get("userID")
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprint("failed to get the user id off req"),
+		})
+		return
+	}
+	//convert into uuid
+	userID, ok := userIDAny.(uuid.UUID)
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprint("failed to parse uuid"),
+		})
+		return
+	}
+	// getting data off request
+	var params struct {
+		Content   string
+		CommentID uuid.UUID
+	}
+	err := c.Bind(&params)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
+		})
+		return
+	}
+
+	// Perform input validation
+
+	if params.Content == "" {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("missing required fields: %v", err),
+		})
+		return
+	}
+
+	comment, err := apiCfg.DB.UpdateUserComment(c.Request.Context(), database.UpdateUserCommentParams{
+		Content: params.Content,
+		UserID:  userID,
+		ID:      params.CommentID,
+	})
+
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to create comment: %v", err),
+		})
+		return
+	}
+
+	//returning it
+	c.JSON(200, gin.H{
+		"comment": comment,
+	})
+}
+
+func (apiCfg *apiConfig) handlerDeleteUserComment(c *gin.Context) {
+	commentIDStr := c.Param("commentID")
+	commentID, err := uuid.Parse(commentIDStr)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to parse url: %v", err),
@@ -208,14 +197,14 @@ func (apiCfg *apiConfig) handlerDeleteUserPost(c *gin.Context) {
 		return
 	}
 
-	err = apiCfg.DB.DeleteUserPost(c.Request.Context(), database.DeleteUserPostParams{
-		ID:     postID,
+	err = apiCfg.DB.DeleteUserComment(c.Request.Context(), database.DeleteUserCommentParams{
+		ID:     commentID,
 		UserID: userID,
 	})
 
 	if err != nil {
 		c.JSON(400, gin.H{
-			"message": fmt.Sprintf("failed to delete post: %v", err),
+			"message": fmt.Sprintf("failed to delete comment: %v", err),
 		})
 		return
 	}

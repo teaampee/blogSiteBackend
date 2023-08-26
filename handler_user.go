@@ -171,7 +171,7 @@ func (apiCfg *apiConfig) handlerLogin(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerValidate(c *gin.Context) {
-	userIDAny, _ := c.Get("UserID")
+	userIDAny, _ := c.Get("userID")
 	userID, ok := userIDAny.(uuid.UUID)
 	if !ok {
 		c.JSON(400, gin.H{

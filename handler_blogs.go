@@ -11,7 +11,7 @@ import (
 
 func (apiCfg *apiConfig) handlerCreateBlog(c *gin.Context) {
 	// get user off req
-	userIDAny, ok := c.Get("UserID")
+	userIDAny, ok := c.Get("userID")
 	if !ok {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprint("failed to get the user id off req"),
@@ -155,7 +155,7 @@ func (apiCfg *apiConfig) handlerGetUserBlog(c *gin.Context) {
 
 func (apiCfg *apiConfig) handlerUpdateUserBlog(c *gin.Context) {
 	// get user off req
-	userIDAny, ok := c.Get("UserID")
+	userIDAny, ok := c.Get("userID")
 	if !ok {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprint("failed to get the user id off req"),
@@ -213,7 +213,7 @@ func (apiCfg *apiConfig) handlerUpdateUserBlog(c *gin.Context) {
 
 func (apiCfg *apiConfig) handlerDeleteUserBlog(c *gin.Context) {
 	// get user off req
-	userIDAny, ok := c.Get("UserID")
+	userIDAny, ok := c.Get("userID")
 	if !ok {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprint("failed to get the user id off req"),
