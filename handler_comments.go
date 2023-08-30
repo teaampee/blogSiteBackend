@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"example.com/blog/v2/internal/database"
@@ -77,6 +78,22 @@ func (apiCfg *apiConfig) handlerCreateComment(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerGetPostComments(c *gin.Context) {
+	limitStr := c.DefaultQuery("limit", "10")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
+	offsetStr := c.DefaultQuery("offset", "10")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
 	postIDStr := c.Param("postID")
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
@@ -85,7 +102,11 @@ func (apiCfg *apiConfig) handlerGetPostComments(c *gin.Context) {
 		})
 	}
 
-	comments, err := apiCfg.DB.GetPostComments(c.Request.Context(), postID)
+	comments, err := apiCfg.DB.GetPostComments(c.Request.Context(), database.GetPostCommentsParams{
+		Offset: int32(offset),
+		Limit:  int32(limit),
+		PostID: postID,
+	})
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to fetch post's comments: %v", err),

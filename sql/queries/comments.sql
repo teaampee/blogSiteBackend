@@ -5,9 +5,10 @@ RETURNING *;
 
 -- name: GetPostComments :many
 SELECT * FROM comments
-WHERE post_id = $1
+WHERE post_id = $3
 ORDER BY created_at DESC
-LIMIT 50;
+OFFSET $1 ROWS
+LIMIT $2;
 
 -- name: GetComment :one
 SELECT * FROM comments WHERE id = $1;

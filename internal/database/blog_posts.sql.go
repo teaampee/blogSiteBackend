@@ -67,13 +67,20 @@ func (q *Queries) DeleteUserPost(ctx context.Context, arg DeleteUserPostParams) 
 
 const getBlogPosts = `-- name: GetBlogPosts :many
 SELECT id, created_at, updated_at, title, content, user_id, blog_id FROM posts
-WHERE blog_id = $1
+WHERE blog_id = $3
 ORDER BY created_at DESC
-LIMIT 50
+OFFSET $1 ROWS
+LIMIT $2
 `
 
-func (q *Queries) GetBlogPosts(ctx context.Context, blogID uuid.UUID) ([]Post, error) {
-	rows, err := q.db.QueryContext(ctx, getBlogPosts, blogID)
+type GetBlogPostsParams struct {
+	Offset int32
+	Limit  int32
+	BlogID uuid.UUID
+}
+
+func (q *Queries) GetBlogPosts(ctx context.Context, arg GetBlogPostsParams) ([]Post, error) {
+	rows, err := q.db.QueryContext(ctx, getBlogPosts, arg.Offset, arg.Limit, arg.BlogID)
 	if err != nil {
 		return nil, err
 	}

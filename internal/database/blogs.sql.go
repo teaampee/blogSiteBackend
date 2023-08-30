@@ -76,14 +76,20 @@ func (q *Queries) GetBlog(ctx context.Context, id uuid.UUID) (Blog, error) {
 }
 
 const getLatestActiveBlogIDs = `-- name: GetLatestActiveBlogIDs :many
-SELECT DISTINCT blog_id
+SELECT DISTINCT ON (blog_id) blog_id
 FROM posts
 ORDER BY created_at DESC
-LIMIT 50
+OFFSET $1 ROWS
+LIMIT $2
 `
 
-func (q *Queries) GetLatestActiveBlogIDs(ctx context.Context) ([]uuid.UUID, error) {
-	rows, err := q.db.QueryContext(ctx, getLatestActiveBlogIDs)
+type GetLatestActiveBlogIDsParams struct {
+	Offset int32
+	Limit  int32
+}
+
+func (q *Queries) GetLatestActiveBlogIDs(ctx context.Context, arg GetLatestActiveBlogIDsParams) ([]uuid.UUID, error) {
+	rows, err := q.db.QueryContext(ctx, getLatestActiveBlogIDs, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -108,11 +114,17 @@ func (q *Queries) GetLatestActiveBlogIDs(ctx context.Context) ([]uuid.UUID, erro
 const getLatestBlogs = `-- name: GetLatestBlogs :many
 SELECT id, created_at, updated_at, title, description, user_id FROM blogs
 ORDER BY created_at DESC
-LIMIT 50
+OFFSET $1 ROWS
+LIMIT $2
 `
 
-func (q *Queries) GetLatestBlogs(ctx context.Context) ([]Blog, error) {
-	rows, err := q.db.QueryContext(ctx, getLatestBlogs)
+type GetLatestBlogsParams struct {
+	Offset int32
+	Limit  int32
+}
+
+func (q *Queries) GetLatestBlogs(ctx context.Context, arg GetLatestBlogsParams) ([]Blog, error) {
+	rows, err := q.db.QueryContext(ctx, getLatestBlogs, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

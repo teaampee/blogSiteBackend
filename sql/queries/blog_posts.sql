@@ -5,9 +5,10 @@ RETURNING *;
 
 -- name: GetBlogPosts :many
 SELECT * FROM posts
-WHERE blog_id = $1
+WHERE blog_id = $3
 ORDER BY created_at DESC
-LIMIT 50;
+OFFSET $1 ROWS
+LIMIT $2;
 
 -- name: GetPost :one
 SELECT * FROM posts WHERE id = $1;

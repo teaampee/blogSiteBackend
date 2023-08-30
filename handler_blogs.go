@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"example.com/blog/v2/internal/database"
@@ -71,8 +72,26 @@ func (apiCfg *apiConfig) handlerCreateBlog(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerGetBlogs(c *gin.Context) {
-
-	blogs, err := apiCfg.DB.GetLatestBlogs(c.Request.Context())
+	limitStr := c.DefaultQuery("limit", "10")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
+	offsetStr := c.DefaultQuery("offset", "10")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
+	blogs, err := apiCfg.DB.GetLatestBlogs(c.Request.Context(), database.GetLatestBlogsParams{
+		Offset: int32(offset),
+		Limit:  int32(limit),
+	})
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to fetch blogs: %v", err),
@@ -85,8 +104,27 @@ func (apiCfg *apiConfig) handlerGetBlogs(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerGetActiveBlogs(c *gin.Context) {
+	limitStr := c.DefaultQuery("limit", "10")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
+	offsetStr := c.DefaultQuery("offset", "10")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
 
-	blogIDs, err := apiCfg.DB.GetLatestActiveBlogIDs(c.Request.Context())
+	blogIDs, err := apiCfg.DB.GetLatestActiveBlogIDs(c.Request.Context(), database.GetLatestActiveBlogIDsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to fetch blogs: %v", err),

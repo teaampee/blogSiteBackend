@@ -82,13 +82,20 @@ func (q *Queries) GetComment(ctx context.Context, id uuid.UUID) (Comment, error)
 
 const getPostComments = `-- name: GetPostComments :many
 SELECT id, created_at, updated_at, content, user_id, post_id FROM comments
-WHERE post_id = $1
+WHERE post_id = $3
 ORDER BY created_at DESC
-LIMIT 50
+OFFSET $1 ROWS
+LIMIT $2
 `
 
-func (q *Queries) GetPostComments(ctx context.Context, postID uuid.UUID) ([]Comment, error) {
-	rows, err := q.db.QueryContext(ctx, getPostComments, postID)
+type GetPostCommentsParams struct {
+	Offset int32
+	Limit  int32
+	PostID uuid.UUID
+}
+
+func (q *Queries) GetPostComments(ctx context.Context, arg GetPostCommentsParams) ([]Comment, error) {
+	rows, err := q.db.QueryContext(ctx, getPostComments, arg.Offset, arg.Limit, arg.PostID)
 	if err != nil {
 		return nil, err
 	}

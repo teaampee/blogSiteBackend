@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"example.com/blog/v2/internal/database"
@@ -11,7 +12,7 @@ import (
 
 func (apiCfg *apiConfig) handlerCreatePost(c *gin.Context) {
 	// get blog id off url
-	blogIDStr := c.Param("blogID")
+	blogIDStr := c.Query("blog_id")
 	blogID, err := uuid.Parse(blogIDStr)
 	if err != nil {
 		c.JSON(400, gin.H{
@@ -80,6 +81,22 @@ func (apiCfg *apiConfig) handlerCreatePost(c *gin.Context) {
 }
 
 func (apiCfg *apiConfig) handlerGetBlogPosts(c *gin.Context) {
+	limitStr := c.DefaultQuery("limit", "10")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
+	offsetStr := c.DefaultQuery("offset", "10")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse queries: %v", err),
+		})
+		return
+	}
 	blogIDStr := c.Param("blogID")
 	blogID, err := uuid.Parse(blogIDStr)
 	if err != nil {
@@ -88,7 +105,11 @@ func (apiCfg *apiConfig) handlerGetBlogPosts(c *gin.Context) {
 		})
 	}
 
-	posts, err := apiCfg.DB.GetBlogPosts(c.Request.Context(), blogID)
+	posts, err := apiCfg.DB.GetBlogPosts(c.Request.Context(), database.GetBlogPostsParams{
+		Offset: int32(offset),
+		Limit:  int32(limit),
+		BlogID: blogID,
+	})
 	if err != nil {
 		c.JSON(400, gin.H{
 			"message": fmt.Sprintf("failed to fetch posts: %v", err),

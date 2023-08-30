@@ -6,13 +6,15 @@ RETURNING *;
 -- name: GetLatestBlogs :many
 SELECT * FROM blogs
 ORDER BY created_at DESC
-LIMIT 50;
+OFFSET $1 ROWS
+LIMIT $2;
 
 -- name: GetLatestActiveBlogIDs :many
-SELECT DISTINCT blog_id
+SELECT DISTINCT ON (blog_id) blog_id
 FROM posts
 ORDER BY created_at DESC
-LIMIT 50;
+OFFSET $1 ROWS
+LIMIT $2;
 
 -- name: GetUserBlog :one
 SELECT * FROM blogs WHERE user_id = $1;
