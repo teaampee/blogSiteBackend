@@ -16,6 +16,8 @@ ORDER BY created_at DESC
 OFFSET $1 ROWS
 LIMIT $2;
 
+
+
 -- name: GetUserBlog :one
 SELECT * FROM blogs WHERE user_id = $1;
 

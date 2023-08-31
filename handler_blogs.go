@@ -112,7 +112,7 @@ func (apiCfg *apiConfig) handlerGetActiveBlogs(c *gin.Context) {
 		})
 		return
 	}
-	offsetStr := c.DefaultQuery("offset", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
 		c.JSON(400, gin.H{

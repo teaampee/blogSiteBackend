@@ -78,7 +78,7 @@ func (q *Queries) GetBlog(ctx context.Context, id uuid.UUID) (Blog, error) {
 const getLatestActiveBlogIDs = `-- name: GetLatestActiveBlogIDs :many
 SELECT DISTINCT ON (blog_id) blog_id
 FROM posts
-ORDER BY created_at DESC
+ORDER BY blog_id, created_at DESC
 OFFSET $1 ROWS
 LIMIT $2
 `
