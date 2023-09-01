@@ -45,6 +45,8 @@ func main() {
 	r.POST("/users", apiCfg.handlerCreateUser)
 	//get user
 	r.GET("users/:userID", apiCfg.handlerGetUser)
+	//update user {json:: name=?,email=?,password=?} update the fields as needed can be left null
+	r.PATCH("/users", apiCfg.UserAuth, apiCfg.handlerUpdateUser)
 	//login {json:: email=?,password=?}
 	r.POST("/login", apiCfg.handlerLogin)
 	//validate user

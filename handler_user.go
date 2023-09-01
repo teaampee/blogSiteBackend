@@ -99,6 +99,76 @@ func (apiCfg *apiConfig) handlerCreateUser(c *gin.Context) {
 	})
 }
 
+func (apiCfg *apiConfig) handlerUpdateUser(c *gin.Context) {
+	userIDAny, _ := c.Get("userID")
+	userID, ok := userIDAny.(uuid.UUID)
+	if !ok {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintln("failed to parse uuid"),
+		})
+		return
+	}
+
+	// getting data off request
+	var params struct {
+		Name     string
+		Email    string
+		Password string
+	}
+
+	err := c.Bind(&params)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to parse json paramaters: %v", err),
+		})
+		return
+	}
+
+	// Perform input validation
+	if params.Email != "" {
+		_, err = mail.ParseAddress(params.Email)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": fmt.Sprintf("false email formatting: %v", err),
+			})
+			return
+		}
+	}
+
+	// hash password
+	if params.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(params.Password), 10)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": fmt.Sprintf("failed to hash password: %v", err),
+			})
+			c.Abort()
+			return
+		}
+		params.Password = string(hash)
+	}
+
+	// create user
+
+	user, err := apiCfg.DB.UpdateUser(c.Request.Context(), database.UpdateUserParams{
+		Column1: params.Name,
+		Column2: params.Email,
+		Column3: params.Password,
+		ID:      userID,
+	})
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": fmt.Sprintf("failed to update user: %v", err),
+		})
+		return
+	}
+
+	//returning it
+	c.JSON(200, gin.H{
+		"user": user,
+	})
+}
+
 func (apiCfg *apiConfig) handlerLogin(c *gin.Context) {
 	// getting data off request
 	var params struct {

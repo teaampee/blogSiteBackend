@@ -83,3 +83,38 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	)
 	return i, err
 }
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET name = CASE WHEN $1 <> '' THEN $1 ELSE name END,
+email = CASE WHEN $2 <> '' THEN $2 ELSE email END,
+password = CASE WHEN $3 <> '' THEN $3 ELSE password END
+where id = $4
+RETURNING id, created_at, updated_at, name, email, password
+`
+
+type UpdateUserParams struct {
+	Column1 interface{}
+	Column2 interface{}
+	Column3 interface{}
+	ID      uuid.UUID
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUser,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.ID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+	)
+	return i, err
+}
